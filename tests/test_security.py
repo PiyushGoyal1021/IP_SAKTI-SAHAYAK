@@ -72,7 +72,18 @@ ABSOLUTE_PATHS = [
 ]
 
 # These must still work - a security fix that breaks the app is not a fix.
-LEGITIMATE_PATHS = ["/", "/index.html", "/favicon.svg", "/icons.svg"]
+# The built asset names carry a content hash, so they are discovered rather than
+# written down. Naming a file that does not exist would NOT fail this check: the
+# SPA catch-all answers 200 with index.html for anything it cannot find, so a
+# stale path here would quietly assert the fallback instead of static serving.
+# That is exactly what happened when two committed-but-unreferenced SVGs were
+# removed - both assertions kept passing on 1023 bytes of index.html. Hence the
+# separate "is not the SPA fallback" assertion below.
+_ASSET_DIR = DIST_ROOT / "assets"
+BUILT_ASSETS = sorted(
+    f"/assets/{p.name}" for p in _ASSET_DIR.glob("*") if p.suffix in {".css", ".js"}
+) if _ASSET_DIR.is_dir() else []
+LEGITIMATE_PATHS = ["/", "/index.html", *BUILT_ASSETS]
 
 
 def body_of(path: str) -> tuple[int, str]:
@@ -165,9 +176,20 @@ print("\n" + "=" * 74)
 print(" NO REGRESSION - the app still serves itself")
 print("=" * 74)
 
+record(
+    "the build produced assets to serve",
+    bool(BUILT_ASSETS),
+    f"{len(BUILT_ASSETS)} found - run `npm run build` if 0",
+)
+
 for path in LEGITIMATE_PATHS:
     status, text = body_of(path)
     record(f"serves {path}", status == 200 and len(text) > 0, f"{status}, {len(text)} bytes")
+
+# A real file must come back as itself, not as the catch-all's index.html.
+for path in BUILT_ASSETS:
+    _, text = body_of(path)
+    record(f"{path} is the file, not the SPA fallback", not _same(text, index_html))
 
 # The SPA fallback is what makes client-side routing work; it must survive.
 status, text = body_of("/some/client/route")

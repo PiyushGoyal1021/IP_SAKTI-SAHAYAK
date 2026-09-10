@@ -54,7 +54,6 @@ from .retrieval import RetrievalResult, retrieve
 from .schemas import (
     CONFIDENCE_LABELS,
     AbstentionKind,
-    Category,
     ClassificationResult,
     ExportReadinessReport,
     ExportReadinessRequest,

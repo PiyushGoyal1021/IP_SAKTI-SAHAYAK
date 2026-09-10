@@ -488,8 +488,13 @@ Their findings are recorded in `CLAUDE.md` §6g, §6j and §6k, and the files th
 in git history at **`9095ca9`** and earlier. Some source comments still cite them by name as
 the evidence for a fix; that is why they are worth being able to find.
 
-`TEST_RESULTS_RAW*.json` (~750 KB) are the raw evidence behind those deleted reports and are
-now orphaned. They were left in place rather than deleted unasked.
+`TEST_RESULTS_RAW*.json` (~750 KB) were the raw evidence behind those deleted reports. They
+were orphaned once the reports went, and have now been removed too, along with the two
+scripts that produced them (`tests/run_checklist.py`, `tests/run_checklist_followups.py`).
+The findings they supported are in `CLAUDE.md` §6k, and the regression suite that replaced
+them is `tests/test_gate_scope.py` - which asserts the opposite of what the followups
+script hypothesised, because §6k measured that hypothesis to be wrong. All four files
+remain in git history.
 
 **Still current:** `CLAUDE.md` (the engineering history and the shared source of truth,
 updated at the end of every phase), `README.md` (setup), `PROJECT_BRIEF.md` (the official

@@ -144,12 +144,6 @@ def _is_capped(scope: str) -> bool:
         return True
 
 
-def reset_cap_memo() -> None:
-    """Forget which providers were capped. For tests."""
-    with _cap_lock:
-        _capped_until.clear()
-
-
 # Process-wide pacing. Several calls fire back to back inside one request, and
 # bursting them is how our own traffic trips a per-minute cap.
 _pace_lock = threading.Lock()

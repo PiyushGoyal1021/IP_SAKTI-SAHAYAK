@@ -42,7 +42,6 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
-from dataclasses import dataclass
 from functools import lru_cache
 
 from .citations import (
@@ -118,20 +117,6 @@ MAX_INBOUND_FOR_SIGNAL = 40
 # family that a hand audit found wrong. The alternative - patching each case -
 # would be a list of document names, which is the thing this project does not do.
 LINKABLE_REGIMES = frozenset({"ip_statute", "drug_regulatory_classification"})
-
-
-@dataclass(frozen=True)
-class ProvisionNode:
-    """One provision, as the corpus proves it exists."""
-
-    doc_id: str
-    act_name: str
-    #: Bare number as the spine records it — "21", "122D", "3".
-    number: str
-
-    @property
-    def label(self) -> str:
-        return f"{_noun_for(self.act_name)} {self.number}"
 
 
 @lru_cache(maxsize=1)

@@ -42,7 +42,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from .config import ROOT, active_model, settings
+from .config import ROOT, active_model
 from .schemas import ExportReadinessReport, Answer, ComparisonResult
 
 logger = logging.getLogger(__name__)

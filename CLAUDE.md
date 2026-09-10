@@ -250,6 +250,7 @@ It abstains correctly and does not fabricate citation IDs, which is the whole ba
 | 15 | Citation depth, evidence-support meter, takeaway banner, card trail, export readiness | **Done** — §6n |
 | 16 | Classification anchors, uncited static copy, the volumes trail, a site-wide dark surface | **Done** — §6o |
 | 17 | Provision graph, orchestration trace, visible audit trail | **Done** — §6p |
+| 18 | Dead-code and dead-asset removal | **Done** — §6q |
 
 **Working agreement:** one phase at a time. Each phase ends with a summary, real verification
 output, and an update to this file. No starting a phase whose dependency is not verified.
@@ -1847,6 +1848,132 @@ Unchanged from §6o, plus:
   storage with access control and a retention policy - `audit.py` says so in its
   own docstring and that has not changed.
 
+
+---
+
+## 6q. Phase 18 - removing what was no longer load-bearing
+
+A sweep for dead code and dead files before the code is shown to judges. Nothing
+here changes behaviour; the value is in what the sweep *refused* to remove, and
+in one guard it found had gone vacuous.
+
+### 76 MB of it was a tracked backup of a gitignored directory
+
+`data/vector_db.bak/` (66 MB, 6 files) and `data/chunks.bak.json` (9.4 MB) were
+committed backups taken before the §6l corpus rebuild. `data/vector_db/` is
+gitignored precisely because it is rebuildable from `data/corpus.zip`; the `.bak`
+copy of it was not covered by that pattern, so a stale, superseded index was the
+single largest thing in the repository.
+
+Also removed, all tracked and all unreferenced:
+
+| Removed | Why |
+|---|---|
+| `TEST_RESULTS_RAW*.json` (735 KB) | `PROJECT_STATUS.md` §5 already called them orphaned and said they were "left in place rather than deleted unasked" |
+| `tests/run_checklist.py`, `run_checklist_followups.py` | produced those JSONs, referenced in no doc, superseded by `tests/test_gate_scope.py` - which asserts the *opposite* of the followups script's hypothesis, because §6k measured it wrong |
+| root `requirements.txt` | a strict subset of `pipeline/requirements.txt`; nothing installs from it (`README.md` names `backend/` and `pipeline/`) |
+| `frontend/README.md` | the stock Vite template README, describing an Oxlint setup this project does not use |
+| `frontend/FRONTEND_UI_CHANGES.md` | described the two-pane sidebar shell that §6m deleted - not merely stale but actively contradicting the current UI |
+| `frontend/src/data/acts.ts` | `ACTS` exported, imported nowhere. §6m moved it here so two pages could share it; both were later rewritten and neither imports it |
+| `frontend/src/assets/` | `hero.png`, `react.svg`, `vite.svg` - none referenced |
+| `frontend/public/` | `icons.svg` was a sprite whose first symbol is a **Bluesky social icon**, and `favicon.svg` a `#863bff` purple mark that is in no part of this palette. Starter-template debris, and `index.html` never linked either |
+
+### The deleted favicon exposed a test that had stopped testing anything
+
+`tests/test_security.py` kept a `LEGITIMATE_PATHS` list on the principle that
+"a security fix that breaks the app is not a fix" - it must prove real static
+files are still served after the §6j traversal fix. Two of its four entries were
+`/favicon.svg` and `/icons.svg`.
+
+Deleting those files did not fail the test. Both assertions kept **passing**, at
+1023 bytes - which is `index.html`. The SPA catch-all answers 200 with the
+fallback for any path it cannot resolve, so a check that only asserts
+`status == 200 and len(text) > 0` cannot tell a served file from a missing one.
+The list had been asserting the fallback, not static serving.
+
+Fixed by discovering the built asset names from `dist/assets` (they carry a
+content hash, so they cannot be written down) and adding the assertion that was
+missing: the body must **not** be the SPA fallback. 25/25 -> 28/28, and the two
+new checks fail correctly if the build is absent.
+
+*Third instance of this project's recurring lesson, after §6c's gate window and
+§6o's inert word-boundary escape: a check that can pass without exercising the
+thing it names is not a check. `LEGITIMATE_PATHS` was written when those files
+existed and was never re-examined when they stopped mattering.*
+
+### Code-level
+
+Three dead symbols, each confirmed unreferenced across `backend/`, `tests/` and
+`pipeline/`:
+
+- `graph.ProvisionNode` - a frozen dataclass never constructed anywhere, taking
+  the `from dataclasses import dataclass` import with it. The graph still reports
+  575 provisions / 602 references / 330 linked passages at `/health`, identical
+  to §6p.
+- `llm.reset_cap_memo()` - docstring "For tests"; no test ever called it.
+- `retrieval.CONFIDENT_DISTANCE` - the fast path it fed was removed in §6c,
+  because skipping the gate on a tight match would also skip the jurisdiction
+  check. The surrounding comment still described that fast path as live; it now
+  records why the constant is gone.
+
+Plus two unused imports (`audit.settings`, `export_readiness.Category`).
+
+**`llm.py`'s `import httpx` was deliberately kept.** It is unused by our own code
+and flagged by any linter, but it is there to force the module fully loaded
+before threads run - a comment above it records the partially-initialised-module
+crash it prevents, and it already carries a `noqa` marker. An unused import with
+a reason is not dead code.
+
+### Frontend copy and styling
+
+- **389 lines of CSS** (4,772 -> 4,383) for 26 classes no longer in any markup:
+  the card-turn trail of §6m (`.trail-flip`, `.trail-face`), the gauge of §6n
+  (`.support-dial`), and the abandoned `.yantra` / `.chamber` / `.hero-vine`
+  landing explorations. Four `@keyframes` died with them. Removal was done by a
+  brace-matching parser, not by deleting lines: several dead classes shared a
+  selector list with live ones (`.lift:hover, .rail-card:hover,
+  .example-chip:hover, ...`), so those rules had to be *pruned* rather than
+  dropped. A first attempt that split preludes on commas corrupted comments
+  containing commas - CSS comments sit in the prelude.
+- **10 unused `i18n` keys**, removed from `en` and `hi` together; the two dicts
+  are asserted to still hold identical key sets (73 each).
+
+**The five `nav*` keys were nearly deleted and are live.** `Shell.tsx` reads them
+as `t[link.key]` off a table of route objects, so no literal `t.navHome` exists
+anywhere. A grep-driven sweep says they are dead. **Check for dynamic lookup
+before deleting anything that looks like an unused string key.** The same applies
+to the `consult-leaf-sway` keyframe, which a naive check missed because its
+`animation:` shorthand wraps onto a second line.
+
+### Verified at the close of this phase
+
+```
+tests/test_units.py       229/229   (unchanged)
+tests/test_security.py     28/28    (was 25/25 - two vacuous checks repaired, +3)
+useSessions.test.mjs       all pass
+frontend tsc --noEmit clean · npm run build clean · braces balanced · 0 empty rules
+/health                   3,282 chunks · anchor_problems: [] · graph_problems: []
+                          graph 575 / 602 / 330 - identical to §6p
+flagship, live query      classical_generic · cites 3(p) · names TKDL
+                          4 steps · 5 trace stages · 0 rejected · 0 unsupported
+                          takeaway "Likely excluded" · disclaimer present
+```
+
+Suites needing many live LLM calls (`benchmarks.py`, `e2e_api.py`, the gate and
+scope suites) were **not** re-run: this phase changed no logic, and §6l's
+warning about bursting the free tier still applies. Re-run them before demoing
+rather than trusting this note.
+
+### Deliberately kept
+
+- `tests/probe_phase1-4.py` and `stress_phase3.py`. They are one-off phase
+  probes, but they are the measurements behind decisions this file defends -
+  the distance/BM25 overlap tables in §6a and §6c come from them, and this file
+  cites them by name. A judge asking "how do you know a distance threshold
+  cannot drive abstention?" should be able to run the script that showed it.
+- `MANUAL_TEST_CHECKLIST.md` - `PROJECT_STATUS.md` lists it as still current.
+- `.shots/` and `frontend/dist/` - both gitignored; `dist/` is what the
+  one-process demo mode of §6h actually serves.
 
 ---
 

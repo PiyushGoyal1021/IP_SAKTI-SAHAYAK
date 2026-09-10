@@ -479,10 +479,11 @@ def retrieve(
 # BM25 overlaps badly - "marketing strategy for my ayurvedic startup" scores
 # 26.29 because "ayurvedic" is a high-value corpus term, beating several genuine
 # questions. Distance separates on this sample by only 0.01, far too thin to
-# trust. So thresholds are used only as a loose outer bound and a fast path;
-# the real decision is a relevance judgement made with the evidence in view.
+# trust. So the threshold is used only as a loose outer bound; the real decision
+# is a relevance judgement made with the evidence in view. The CONFIDENT_DISTANCE
+# fast path that once sat beside it was removed in §6c: it would have skipped the
+# jurisdiction check on a tight match, and that check must run every time.
 MAX_DENSE_DISTANCE = 0.45
-CONFIDENT_DISTANCE = 0.30
 
 # How many retrieved passages the relevance gate reads. This is the FULL default
 # top_k, not a sample: see llm_relevance_gate for the measurement that forced it
