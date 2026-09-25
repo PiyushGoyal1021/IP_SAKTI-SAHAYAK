@@ -1,7 +1,7 @@
 # IP-SAKTI Sahayak
 
 A RAG-based, **source-cited** AI assistant for Intellectual Property and regulatory guidance
-in Ayurveda — built for **SIH 2026 (internal round)**.
+in Ayurveda.
 
 Ask an IP or regulatory question about an Ayurvedic product and the assistant classifies the
 formulation, retrieves the governing provisions from a curated corpus of Indian statutes,
@@ -60,13 +60,13 @@ On macOS/Linux substitute `.venv/bin/python` and `cp` for `copy`.
 | Path | What it holds |
 |---|---|
 | `backend/app/` | FastAPI service: classification, retrieval, generation, citation validation |
-| `pipeline/` | Corpus ingestion — PDF extraction, chunking, embedding |
+| `pipeline/` | Corpus ingestion - PDF extraction, chunking, embedding |
 | `data/` | `corpus.zip` (26 source PDFs), extracted chunks, ChromaDB index |
 | `frontend/` | React + Tailwind UI |
 | `tests/` | Benchmark and robustness suites |
 | `docs/` | Pipeline and vector-DB notes |
 
-**`CLAUDE.md` is the shared context file** — architecture, corpus quirks, stack decisions and
+**`CLAUDE.md` is the shared context file** - architecture, corpus quirks, stack decisions and
 phase status. Read it before contributing; it is kept current with every phase.
 
 ---
@@ -75,13 +75,13 @@ phase status. Read it before contributing; it is kept current with every phase.
 
 **2,457 chunks** extracted from **26 Indian legal and regulatory PDFs**, spanning:
 
-- **Classification** — Drugs & Cosmetics Act 1940 + Rules 1945, FSSAI Ayurveda Aahar Regulations
-- **National IP statutes** — Patents Act 1970 + Rules 2024, GI Act 1999, Trade Marks Act 1999,
+- **Classification** - Drugs & Cosmetics Act 1940 + Rules 1945, FSSAI Ayurveda Aahar Regulations
+- **National IP statutes** -\- Patents Act 1970 + Rules 2024, GI Act 1999, Trade Marks Act 1999,
   Designs Act 2000, Copyright Act 1957, Plant Varieties Act 2001, Biological Diversity Act 2002
   (+ 2023 Amendment, 2024 Rules), Drugs and Magic Remedies Act 1954
-- **Registries** — TKDL access policy, Manual of Patent Office Practice, GI Journal examples,
+- **Registries** - TKDL access policy, Manual of Patent Office Practice, GI Journal examples,
   NBA/ABS guidelines
-- **Pharmacopoeia** — Ayurvedic Pharmacopoeia of India Vol-I, Ayurvedic Formulary of India
+- **Pharmacopoeia** - Ayurvedic Pharmacopoeia of India Vol-I, Ayurvedic Formulary of India
 
 Regenerable end to end from `data/corpus.zip`:
 
@@ -116,10 +116,10 @@ reasoning for each is documented in `CLAUDE.md` §4.
 
 Citation accuracy is the graded criterion, so it is enforced structurally rather than trusted:
 
-1. **Grounded prompting** — the model answers only from the evidence chunks passed to it.
-2. **Post-generation validation** — every citation ID returned by the model is checked against
+1. **Grounded prompting** - the model answers only from the evidence chunks passed to it.
+2. **Post-generation validation** - every citation ID returned by the model is checked against
    the set of chunks actually retrieved. An ID that was not retrieved is rejected, not warned about.
-3. **Forced abstention** — if a reasoning step ends up with no valid citation, it is replaced
+3. **Forced abstention** - if a reasoning step ends up with no valid citation, it is replaced
    with an explicit statement of insufficient evidence rather than shipped unsourced.
 
 ---
@@ -132,12 +132,8 @@ Citation accuracy is the graded criterion, so it is enforced structurally rather
 | `tests/benchmarks.py` | Part F benchmarks scored on the brief's 4 criteria, plus an off-script robustness suite (**92/94** on the last cold run; free-model variance moves the last point or two, so re-run rather than trusting this number) |
 | `tests\e2e_api.py` | Every UI state over HTTP: answers, each abstention kind, validation, citation integrity (**24/24**) |
 | `tests\probe_phase1.py` | Raw retrieval quality and abstention-threshold calibration |
-| `tests\stress_phase3.py` | 19 adversarial cases — corpus boundaries, false premises, other languages, injection |
+| `tests\stress_phase3.py` | 19 adversarial cases - corpus boundaries, false premises, other languages, injection |
 
 Benchmarks and e2e need the backend running. Restart it first for a genuinely cold
-run — otherwise the answer cache will serve prior results.
+run - otherwise the answer cache will serve prior results.
 
-## Team
-
-- **Person A** — backend: corpus processing, classification, retrieval, generation, API
-- **Person B** — frontend: UI, reasoning-trail and citation components, integration, polish
